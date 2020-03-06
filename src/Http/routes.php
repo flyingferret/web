@@ -118,13 +118,21 @@ Route::group([
             include __DIR__ . '/Routes/Character/View.php';
         });
 
+        // Squads Routes
+        Route::group([
+            'namespace' => 'Squads',
+            'prefix'    => 'squads',
+        ], function () {
+            include __DIR__ . '/Routes/Squads/Routes.php';
+        });
+
         // Configuration Routes. In the context of seat,
         // all configuration should only be possible if
         // a user has the 'superuser' role.
         Route::group([
             'namespace'  => 'Configuration',
             'prefix'     => 'configuration',
-            'middleware' => 'bouncer:superuser',
+            'middleware' => 'bouncer:global.superuser',
         ], function () {
 
             // User Management
@@ -184,6 +192,8 @@ Route::group([
 
             include __DIR__ . '/Routes/Tools/Job.php';
             include __DIR__ . '/Routes/Tools/Standings.php';
+            include __DIR__ . '/Routes/Tools/Notes.php';
+            include __DIR__ . '/Routes/Tools/Moons.php';
         });
 
     });

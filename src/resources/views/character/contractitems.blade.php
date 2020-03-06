@@ -12,10 +12,9 @@
   @foreach($assets as $asset)
 
     <tr>
-      <td>{{ number($asset->quantity, 0) }}</td>
+      <td>{{ number_format($asset->quantity, 0) }}</td>
       <td>
-        {!! img('type', $asset->typeID, 32, ['class' => 'img-circle eve-icon small-icon'], false) !!}
-        {{ $asset->typeName }}
+        @include('web::partials.type', ['type_id' => $asset->typeID, 'type_name' => $asset->typeName])
       </td>
       <td>{{ number_metric($asset->quantity * $asset->volume) }} m&sup3;</td>
       <td>{{ $asset->groupName }}</td>

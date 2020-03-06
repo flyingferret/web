@@ -6,28 +6,30 @@
 
 @section('character_content')
 
-  <div class="panel panel-default">
-    <div class="panel-heading">
-      <h3 class="panel-title">
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title">
         {{ trans('web::seat.notifications') }}
-        @if(auth()->user()->has('character.jobs'))
-          <span class="pull-right">
-            <a href="{{ route('tools.jobs.dispatch', ['character_id' => $request->character_id, 'job_name' => 'character.notifications']) }}"
-               style="color: #000000">
-              <i class="fa fa-refresh" data-toggle="tooltip" title="{{ trans('web::seat.update_notifications') }}"></i>
-            </a>
-          </span>
-        @endif
       </h3>
+      @if(auth()->user()->has('character.jobs'))
+        <div class="card-tools">
+          <div class="input-group input-group-sm">
+            <a href="{{ route('tools.jobs.dispatch', ['character_id' => $request->character_id, 'job_name' => 'character.notifications']) }}"
+               class="btn btn-sm btn-light">
+              <i class="fas fa-sync" data-toggle="tooltip" title="{{ trans('web::seat.update_notifications') }}"></i>
+            </a>
+          </div>
+        </div>
+      @endif
     </div>
-    <div class="panel-body">
-      <div class="margin-bottom">
-        <select multiple="multiple" id="dt-character-selector" class="form-control">
+    <div class="card-body">
+      <div class="mb-3">
+        <select multiple="multiple" id="dt-character-selector" class="form-control" style="width: 100%;">
           @foreach($characters as $character)
-            @if($character->id == $request->character_id)
-              <option selected="selected" value="{{ $character->id }}">{{ $character->name }}</option>
+            @if($character->character_id == $request->character_id)
+              <option selected="selected" value="{{ $character->character_id }}">{{ $character->name }}</option>
             @else
-              <option value="{{ $character->id }}">{{ $character->name }}</option>
+              <option value="{{ $character->character_id }}">{{ $character->name }}</option>
             @endif
           @endforeach
         </select>

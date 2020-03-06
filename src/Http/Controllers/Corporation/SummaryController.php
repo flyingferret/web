@@ -34,9 +34,8 @@ class SummaryController extends Controller
     use Wallet;
 
     /**
-     * @param $corporation_id
-     *
-     * @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View
+     * @param int $corporation_id
+     * @return \Illuminate\Contracts\View\Factory|\Illuminate\Http\RedirectResponse|\Illuminate\View\View
      */
     public function show(int $corporation_id)
     {
@@ -50,11 +49,11 @@ class SummaryController extends Controller
             return redirect()->back()
                 ->with('error', trans('web::seat.unknown_corporation'));
 
-        $divisions = $this->getCorporationDivisions($corporation_id);
+        $asset_divisions = $this->getCorporationDivisions($corporation_id);
         $wallet_divisions = $this->getCorporationWalletDivisions($corporation_id);
 
         return view('web::corporation.summary',
-            compact('divisions', 'sheet', 'wallet_divisions'));
+            compact('sheet', 'asset_divisions', 'wallet_divisions'));
 
     }
 }

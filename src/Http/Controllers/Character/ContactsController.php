@@ -22,9 +22,12 @@
 
 namespace Seat\Web\Http\Controllers\Character;
 
+use Seat\Eveapi\Models\RefreshToken;
 use Seat\Web\Http\Controllers\Controller;
 use Seat\Web\Http\DataTables\Character\Intel\ContactDataTable;
 use Seat\Web\Http\DataTables\Scopes\CharacterScope;
+use Seat\Web\Http\DataTables\Scopes\Filters\ContactCategoryScope;
+use Seat\Web\Http\DataTables\Scopes\Filters\ContactStandingLevelScope;
 use Seat\Web\Models\User;
 
 /**
@@ -35,15 +38,22 @@ use Seat\Web\Models\User;
 class ContactsController extends Controller
 {
     /**
-     * @param \Seat\Web\Http\DataTables\Character\Intel\ContactDataTable $table
+     * @param int $character_id
+     * @param \Seat\Web\Http\DataTables\Character\Intel\ContactDataTable $dataTable
      * @return mixed
      */
     public function index(int $character_id, ContactDataTable $dataTable)
     {
-        $characters = (User::find($character_id))->group->users;
+        $token = RefreshToken::where('character_id', $character_id)->first();
+        $characters = collect();
+        if ($token) {
+            $characters = User::with('characters')->find($token->user_id)->characters;
+        }
 
         return $dataTable
             ->addScope(new CharacterScope('character.contact', $character_id, request()->input('characters', [])))
+            ->addScope(new ContactCategoryScope(request()->input('filters.category')))
+            ->addScope(new ContactStandingLevelScope(request()->input('filters.standing')))
             ->render('web::character.contacts', compact('characters'));
     }
 }

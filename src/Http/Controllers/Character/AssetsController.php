@@ -22,6 +22,7 @@
 
 namespace Seat\Web\Http\Controllers\Character;
 
+use Seat\Eveapi\Models\Character\CharacterInfo;
 use Seat\Services\Repositories\Character\Assets;
 use Seat\Web\Http\Controllers\Controller;
 use Seat\Web\Models\User;
@@ -36,9 +37,8 @@ class AssetsController extends Controller
     use Assets;
 
     /**
-     * @param $character_id
-     *
-     * @return \Illuminate\View\View
+     * @param int $character_id
+     * @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View
      */
     public function getAssetsView(int $character_id)
     {
@@ -48,8 +48,6 @@ class AssetsController extends Controller
 
     /**
      * @param int $character_id
-     *
-     * @return mixed
      * @throws \Exception
      */
     public function getCharacterAssets(int $character_id)
@@ -57,18 +55,14 @@ class AssetsController extends Controller
         if (! request()->has('all_linked_characters'))
             return abort(500);
 
-        if (request('all_linked_characters') === 'false')
-            $character_ids = collect($character_id);
+        $character_ids = collect($character_id);
 
         if (request('all_linked_characters') === 'true')
-            $character_ids = User::find($character_id)->group->users
-                ->filter(function ($user) {
-                    if (! $user->name === 'admin' || $user->id === 1)
-                        return false;
-
-                    return true;
-                })
-                ->pluck('id');
+            if(CharacterInfo::find($character_id)->refresh_token) {
+                $character_ids = User::find(CharacterInfo::find($character_id)->refresh_token->user_id)
+                    ->characters
+                    ->pluck('character_id');
+            }
 
         $assets = $this->getCharacterAssetsBuilder($character_ids);
 

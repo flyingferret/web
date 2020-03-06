@@ -38,8 +38,7 @@ class LedgerController extends Controller
     use Wallet;
 
     /**
-     * @param $corporation_id
-     *
+     * @param int $corporation_id
      * @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View
      */
     public function getWalletSummary(int $corporation_id)
@@ -47,53 +46,135 @@ class LedgerController extends Controller
 
         $divisions = $this->getCorporationWalletDivisionSummary($corporation_id);
 
-        return view('web::corporation.ledger.walletsummary',
+        return view('web::corporation.ledger.wallet_summary',
             compact('divisions'));
     }
 
     /**
-     * @param      $corporation_id
-     * @param null $year
-     * @param null $month
-     *
+     * @param int $corporation_id
+     * @param int|null $year
+     * @param int|null $month
      * @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View
      */
-    public function getBountyPrizesByMonth(int $corporation_id, $year = null, $month = null)
+    public function getBountyPrizesByMonth(int $corporation_id, ?int $year = null, ?int $month = null)
     {
 
-        ! is_null($year) ? $year : $year = date('Y');
-        ! is_null($month) ? $year : $month = date('m');
+        $year = is_null($year) ? date('Y') : $year;
+        $month = is_null($month) ? date('m') : $month;
 
-        $bountyprizes = $this->getCorporationLedgerBountyPrizeDates(
-            $corporation_id);
+        $periods = $this->getCorporationLedgerBountyPrizeDates($corporation_id);
+        $entries = $this->getCorporationLedgerBountyPrizeByMonth($corporation_id, $year, $month);
 
-        $bountyprizedates = $this->getCorporationLedgerBountyPrizeByMonth(
-            $corporation_id, $year, $month);
-
-        return view('web::corporation.ledger.bountyprizesbymonth',
-            compact('bountyprizes', 'bountyprizedates',
-                'corporation_id', 'month', 'year'));
+        return view('web::corporation.ledger.bounty_prizes',
+            compact('periods', 'entries', 'corporation_id', 'month', 'year'));
     }
 
     /**
-     * @param      $corporation_id
-     * @param null $year
-     * @param null $month
-     *
+     * @param int $corporation_id
+     * @param int|null $year
+     * @param int|null $month
      * @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View
      */
-    public function getPlanetaryInteractionByMonth(int $corporation_id, $year = null, $month = null)
+    public function getPlanetaryInteractionByMonth(int $corporation_id, ?int $year = null, ?int $month = null)
     {
 
-        ! is_null($year) ? $year : $year = date('Y');
-        ! is_null($month) ? $year : $month = date('m');
+        $year = is_null($year) ? date('Y') : $year;
+        $month = is_null($month) ? date('m') : $month;
 
-        $pidates = $this->getCorporationLedgerPIDates($corporation_id);
+        $periods = $this->getCorporationLedgerPIDates($corporation_id);
+        $entries = $this->getCorporationLedgerPITotalsByMonth($corporation_id, $year, $month);
 
-        $pitotals = $this->getCorporationLedgerPITotalsByMonth(
-            $corporation_id, $year, $month);
+        return view('web::corporation.ledger.planetary_interaction',
+            compact('periods', 'entries', 'corporation_id', 'month', 'year'));
+    }
 
-        return view('web::corporation.ledger.planetaryinteraction',
-            compact('pidates', 'pitotals', 'corporation_id', 'month', 'year'));
+    /**
+     * @param int $corporation_id
+     * @param int|null $year
+     * @param int|null $month
+     * @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View
+     */
+    public function getOfficesRentalsByMonth(int $corporation_id, ?int $year = null, ?int $month = null)
+    {
+        $year = is_null($year) ? date('Y') : $year;
+        $month = is_null($month) ? date('m') : $month;
+
+        $periods = $this->getCorporationLedgerOfficesRentalsPeriods($corporation_id);
+        $entries = $this->getCorporationLedgerOfficesRentalsByMonth($corporation_id, $year, $month);
+
+        return view('web::corporation.ledger.offices_rentals',
+            compact('periods', 'entries', 'corporation_id', 'month', 'year'));
+    }
+
+    /**
+     * @param int $corporation_id
+     * @param int|null $year
+     * @param int|null $month
+     * @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View
+     */
+    public function getIndustryFacilityByMonth(int $corporation_id, ?int $year = null, ?int $month = null)
+    {
+        $year = is_null($year) ? date('Y') : $year;
+        $month = is_null($month) ? date('m') : $month;
+
+        $periods = $this->getCorporationLedgerIndustryFacilityPeriods($corporation_id);
+        $entries = $this->getCorporationLedgerIndustryFacilityByMonth($corporation_id, $year, $month);
+
+        return view('web::corporation.ledger.industry_facility',
+            compact('periods', 'entries', 'corporation_id', 'month', 'year'));
+    }
+
+    /**
+     * @param int $corporation_id
+     * @param int|null $year
+     * @param int|null $month
+     * @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View
+     */
+    public function getReprocessingByMonth(int $corporation_id, ?int $year = null, ?int $month = null)
+    {
+        $year = is_null($year) ? date('Y') : $year;
+        $month = is_null($month) ? date('m') : $month;
+
+        $periods = $this->getCorporationLedgerReprocessingPeriods($corporation_id);
+        $entries = $this->getCorporationLedgerReprocessingByMonth($corporation_id, $year, $month);
+
+        return view('web::corporation.ledger.reprocessing',
+            compact('periods', 'entries', 'corporation_id', 'month', 'year'));
+    }
+
+    /**
+     * @param int $corporation_id
+     * @param int|null $year
+     * @param int|null $month
+     * @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View
+     */
+    public function getJumpClonesByMonth(int $corporation_id, ?int $year = null, ?int $month = null)
+    {
+        $year = is_null($year) ? date('Y') : $year;
+        $month = is_null($month) ? date('m') : $month;
+
+        $periods = $this->getCorporationLedgerJumpClonesPeriods($corporation_id);
+        $entries = $this->getCorporationLedgerJumpClonesByMonth($corporation_id, $year, $month);
+
+        return view('web::corporation.ledger.jump_clones',
+            compact('periods', 'entries', 'corporation_id', 'month', 'year'));
+    }
+
+    /**
+     * @param int $corporation_id
+     * @param int|null $year
+     * @param int|null $month
+     * @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View
+     */
+    public function getJumpBridgesByMonth(int $corporation_id, ?int $year = null, ?int $month = null)
+    {
+        $year = is_null($year) ? date('Y') : $year;
+        $month = is_null($month) ? date('m') : $month;
+
+        $periods = $this->getCorporationLedgerJumpBridgesPeriods($corporation_id);
+        $entries = $this->getCorporationLedgerJumpBridgesByMonth($corporation_id, $year, $month);
+
+        return view('web::corporation.ledger.jump_bridges',
+            compact('periods', 'entries', 'corporation_id', 'month', 'year'));
     }
 }

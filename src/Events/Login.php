@@ -27,6 +27,7 @@ use Illuminate\Auth\Events\Login as LoginEvent;
 use Illuminate\Support\Facades\Request;
 use Seat\Console\Bus\CharacterTokenShouldUpdate;
 use Seat\Console\Bus\CorporationTokenShouldUpdate;
+use Seat\Eveapi\Models\Character\CharacterRole;
 use Seat\Web\Models\UserLoginHistory;
 
 /**
@@ -44,6 +45,8 @@ class Login
      */
     public static function handle(LoginEvent $event)
     {
+        if (session()->has('impersonation_origin'))
+            return;
 
         // Create a log entry for this login.
         $event->user->last_login_source = Request::getClientIp();
@@ -59,13 +62,14 @@ class Login
         $message = 'User logged in from ' . Request::getClientIp();
         event('security.log', [$message, 'authentication']);
 
-        if ($event->user->refresh_token()->exists()) {
+        foreach ($event->user->refresh_tokens as $token) {
 
-            // Update Character information
-            (new CharacterTokenShouldUpdate($event->user->refresh_token, 'high'))->fire();
+            // Update Character Information
+            (new CharacterTokenShouldUpdate($token))->fire();
 
-            // Update Corporation information
-            (new CorporationTokenShouldUpdate($event->user->refresh_token, 'high'))->fire();
+            // Update Corporation Information if user is Director (otherwise, keep normal flow)
+            if (CharacterRole::where('character_id', $token->character_id)->where('role', 'Director')->exists())
+                (new CorporationTokenShouldUpdate($token->affiliation->corporation_id, $token))->fire();
         }
     }
 }

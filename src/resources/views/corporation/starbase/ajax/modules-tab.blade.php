@@ -9,7 +9,7 @@
 
       @else
 
-        <table class="table table-condensed table-hover table-responsive">
+        <table class="table table-condensed table-hover">
           <tbody>
           <tr>
             <th>{{ trans_choice('web::seat.type', 1) }}</th>
@@ -21,8 +21,7 @@
 
             <tr>
               <td>
-                {!! img('type', $starbase_module->type_id, 64, ['class' => 'img-circle eve-icon small-icon'], false) !!}
-                {{ $starbase_module->type->typeName }}
+                @include('web::partials.type', ['type_id' => $starbase_module->type_id, 'type_name' => $starbase_module->type->typeName])
                 @if($starbase_module->type->typeName !== $starbase_module->name)
                   <i>({{ $starbase_module->name }})</i>
                 @endif
@@ -31,7 +30,7 @@
                 @foreach($starbase_module->content as $content)
                 <span data-toggle="tooltip"
                       title="" data-original-title="{{ $content->type->typeName }}">
-                  {!! img('type', $content->type_id, 64, ['class' => 'img-circle eve-icon small-icon'], false) !!}
+                  {!! img('types', 'icon', $content->type_id, 64, ['class' => 'img-circle eve-icon small-icon'], false) !!}
                 </span>
                 @endforeach
               </td>
@@ -41,12 +40,12 @@
                   @if(is_null($starbase_module->content))
                   0%
                   @else
-                  {{ number($starbase_module->usedVolumeRate, 2) }}%
+                  {{ number_format($starbase_module->usedVolumeRate, 2) }}%
                   @endif
                 </b>
                 <i>
-                  ({{ number($starbase_module->usedVolume) }} m&sup3; / {{ number($starbase_module->type->capacity) }} m&sup3;)
-                  {{ number($starbase_module->content->count(), 0) }}
+                  ({{ number_format($starbase_module->usedVolume) }} m&sup3; / {{ number_format($starbase_module->type->capacity) }} m&sup3;)
+                  {{ number_format($starbase_module->content->count(), 0) }}
                   {{ trans_choice('web::seat.item', $starbase_module->content->count()) }}
                 </i>
                 @endif
@@ -64,8 +63,8 @@
                 @if($starbase_module->content->count() > 0)
 
                 <!-- Button trigger modal -->
-                <a type="button" data-toggle="modal" data-target="#assetModal{{ $starbase_module->item_id }}">
-                  <i class="fa fa-cube"></i>
+                <a type="button" data-widget="modal" data-target="#assetModal{{ $starbase_module->item_id }}">
+                  <i class="fas fa-cube"></i>
                 </a>
 
                 <!-- Modal -->
@@ -84,7 +83,7 @@
                       </div>
                       <div class="modal-body">
 
-                        <table class="table table-condensed table-hover table-responsive">
+                        <table class="table table-sm table-condensed table-hover">
                           <tbody>
                           <tr>
                             <th>#</th>
@@ -97,8 +96,7 @@
                             <tr>
                               <td>{{ $content->quantity }}</td>
                               <td>
-                                {!! img('type', $content->type_id, 64, ['class' => 'img-circle eve-icon small-icon'], false) !!}
-                                {{ $content->type->typeName }}
+                                @include('web::partials.type', ['type_id' => $content->type_id, 'type_name' => $content->type->typeName])
                               </td>
                               <td>
                                 @include('web::macros.progressbar',

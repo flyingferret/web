@@ -41,27 +41,16 @@ abstract class AbstractContactDataTable extends DataTable
         return datatables()
             ->eloquent($this->applyScopes($this->query()))
             ->editColumn('standing', function ($row) {
-                switch (true) {
-                    case $row->standing > 5:
-                        return '<b class="text-navy">' . $row->standing . '</b>';
-                    case $row->standing > 0:
-                        return '<b class="text-primary">' . $row->standing . '</b>';
-                    case $row->standing < -5:
-                        return '<b class="text-red">' . $row->standing . '</b>';
-                    case $row->standing < 0:
-                        return '<b class="text-orange">' . $row->standing . '</b>';
-                    default:
-                        return '<b class="text-gray">' . $row->standing . '</b>';
-                }
+                return view('web::partials.standing', ['standing' => $row->standing]);
             })
-            ->addColumn('name', function ($row) {
-                switch ($row->contact_type) {
+            ->editColumn('entity.name', function ($row) {
+                switch ($row->entity->category) {
                     case 'alliance':
-                        return view('web::partials.alliance', ['alliance' => $row->contact_id]);
+                        return view('web::partials.alliance', ['alliance' => $row->entity]);
                     case 'corporation':
-                        return view('web::partials.corporation', ['corporation' => $row->contact_id]);
+                        return view('web::partials.corporation', ['corporation' => $row->entity]);
                     case 'character':
-                        return view('web::partials.character', ['character' => $row->contact_id]);
+                        return view('web::partials.character', ['character' => $row->entity]);
                     default:
                         return '';
                 }
@@ -82,7 +71,6 @@ abstract class AbstractContactDataTable extends DataTable
                     $sub_query->whereRaw('name LIKE ?', ["%$keyword%"]);
                 });
             })
-            ->rawColumns(['name', 'standing', 'action'])
             ->make(true);
     }
 
@@ -111,7 +99,7 @@ abstract class AbstractContactDataTable extends DataTable
     public function getColumns()
     {
         return [
-            'name',
+            'entity.name',
             'contact_type',
             'standing',
             'labels',

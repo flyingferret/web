@@ -1,7 +1,8 @@
-{!! img('faction', $faction, 32, ['class' => 'img-circle eve-icon small-icon'], false) !!}
-@if (! is_null(cache('name_id:' . $faction)))
-  {{ cache('name_id:' . $faction) }}
-@else
-  <span class="id-to-name" data-id="{{ $faction }}">{{ trans('web::seat.unknown') }}</span>
+@if(! is_null($faction->entity_id))
+  {!! img('factions', 'logo', $faction->entity_id, 32, ['class' => 'img-circle eve-icon small-icon'], false) !!}
+  {!!
+    cache(sprintf('name_id:%s', $faction->entity_id), function () use ($faction) {
+      return sprintf('<span class="id-to-name" data-id="%d">%s</span>', $faction->entity_id, trans('web::seat.unknown'));
+    })
+  !!}
 @endif
-

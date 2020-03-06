@@ -1,31 +1,35 @@
-<h4 class="page-header">About</h4>
+<h4>About</h4>
+
 <div class="media">
-  <div class="media-left">
-    {!! img('type', $fitting->ship->typeID, 64, ['class' => 'media-object', 'alt' => $fitting->ship->typeName], false) !!}
-  </div>
+  {!! img('types', 'render', $fitting->ship->typeID, 64, ['class' => 'align-self-center mr-3', 'alt' => $fitting->ship->typeName], false) !!}
   <div class="media-body">
-    <h4 class="media-heading">{{ $fitting->ship->typeName }}</h4>
-    <p>{{ $fitting->ship->description }}</p>
+    <h5 class="mt-0">{{ $fitting->ship->typeName }}</h5>
+    <p class="text-justify">{!! $fitting->ship->description !!}</p>
   </div>
 </div>
 
-<h4 class="page-header">Financial</h4>
-<table class="table table-condensed no-border">
-  <thead>
-    <tr>
-      <th>Hull Estimated Price</th>
-      <th>Fitting Estimated Price</th>
-      <th>Full Estimated Price</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td>{{ number($fitting->ship->price->adjusted_price) }}</td>
-      <td>{{ number($fitting->fitting_estimated_price) }}</td>
-      <td>{{ number($fitting->estimated_price) }}</td>
-    </tr>
-  </tbody>
-</table>
+<h4>Financial</h4>
+
+<div class="row mb-3">
+  <div class="col-4">
+    <dl>
+      <dt>Hull Estimated Price</dt>
+      <dd>{{ number($fitting->ship->price->average_price) }}</dd>
+    </dl>
+  </div>
+  <div class="col-4">
+    <dl>
+      <dt>Fitting Estimated Price</dt>
+      <dd>{{ number($fitting->fitting_estimated_price) }}</dd>
+    </dl>
+  </div>
+  <div class="col-4">
+    <dl>
+      <dt>Full Estimated Price</dt>
+      <dd>{{ number($fitting->estimated_price) }}</dd>
+    </dl>
+  </div>
+</div>
 
 @include('web::common.fittings.modals.fitting.slots', [
   'title' => 'Sub-Systems Slots',

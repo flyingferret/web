@@ -13,23 +13,40 @@
       "Seat\\Web\\": "src/"
     }
   },
-  "minimum-stability": "alpha",
+  "autoload-dev": {
+    "psr-4": {
+      "Seat\\Tests\\Web\\": "tests/"
+    }
+  },
+  "minimum-stability": "dev",
   "prefer-stable": true,
   "require": {
-    "php": ">=7.1",
-    "laravel/framework": "5.5.*",
-    "laravel/horizon": "^1.0",
-    "laravel/tinker": "~1.0",
-    "laravel/socialite": "^3.0",
-    "eveseat/eseye": "~1",
-    "eveseat/eveapi": "~3",
-    "eveseat/services": "~3",
-    "league/csv": "^9.1",
+    "php": "^7.3",
+    "ext-json": "*",
+    "ext-gd": "*",
+    "almasaeed2010/adminlte": "^3.0",
+    "components/font-awesome": "^5.9",
+    "datatables/datatables": "^1.10",
+    "doctrine/dbal": "~2",
+    "erusev/parsedown": "^1.7",
+    "eveseat/eseye": "~2",
+    "eveseat/eveapi": "4.0.x-dev",
+    "eveseat/services": "4.0.x-dev",
     "guzzlehttp/guzzle": "^6.3",
-    "yajra/laravel-datatables-oracle": "~8",
-    "yajra/laravel-datatables-buttons": "^4.0",
-    "components/font-awesome": "^4.7",
-    "erusev/parsedown": "^1.7"
+    "intervention/image": "^2.5",
+    "laravel/framework": "^6.2",
+    "laravel/horizon": "^3.4",
+    "laravel/socialite": "^4.2",
+    "laravel/tinker": "~1.0",
+    "lasserafn/php-initial-avatar-generator": "^4.0",
+    "socialiteproviders/manager": "^3.0",
+    "twbs/bootstrap": "^4.3",
+    "yajra/laravel-datatables-oracle": "~9",
+    "yajra/laravel-datatables-buttons": "^4.0"
+  },
+  "require-dev": {
+    "orchestra/testbench": "^4.0",
+    "orchestra/database": "^4.0"
   },
   "extra": {
     "laravel": {

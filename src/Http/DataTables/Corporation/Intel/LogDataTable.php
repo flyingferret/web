@@ -40,15 +40,14 @@ class LogDataTable extends DataTable
                 return view('web::partials.date', ['datetime' => $row->changed_at]);
             })
             ->editColumn('issuer.name', function ($row) {
-                return view('web::partials.character', ['character' => $row->issuer->entity_id])->render();
+                return view('web::partials.character', ['character' => $row->issuer]);
             })
             ->editColumn('character.name', function ($row) {
-                return view('web::partials.character', ['character' => $row->character->entity_id])->render();
+                return view('web::partials.character', ['character' => $row->character]);
             })
             ->editColumn('role', function ($row) {
                 return str_replace('_', ' ', $row->role);
             })
-            ->rawColumns(['changed_at', 'issuer.name', 'character.name'])
             ->make(true);
     }
 
@@ -59,7 +58,8 @@ class LogDataTable extends DataTable
             ->columns($this->getColumns())
             ->parameters([
                 'drawCallback' => 'function () { $("img").unveil(100); ids_to_names(); }',
-            ]);
+            ])
+            ->orderBy(0, 'desc');
     }
 
     public function query()

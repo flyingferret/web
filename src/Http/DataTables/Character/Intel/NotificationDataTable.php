@@ -46,14 +46,14 @@ class NotificationDataTable extends DataTable
             ->editColumn('type', function ($row) {
                 return view('web::character.notification', compact('row'));
             })
-            ->addColumn('sender', function ($row) {
+            ->editColumn('sender.name', function ($row) {
                 switch ($row->sender->category) {
                     case 'alliance':
-                        return view('web::partials.alliance', ['alliance' => $row->sender_id]);
+                        return view('web::partials.alliance', ['alliance' => $row->sender]);
                     case 'corporation':
-                        return view('web::partials.corporation', ['corporation' => $row->sender_id]);
+                        return view('web::partials.corporation', ['corporation' => $row->sender]);
                     case 'character':
-                        return view('web::partials.character', ['character' => $row->sender_id]);
+                        return view('web::partials.character', ['character' => $row->sender]);
                 }
 
                 return $row->sender->name;
@@ -93,7 +93,7 @@ class NotificationDataTable extends DataTable
     {
         return [
             ['data' => 'timestamp', 'title' => trans('web::notifications.date')],
-            ['data' => 'sender', 'title' => trans('web::notifications.sender')],
+            ['data' => 'sender.name', 'title' => trans('web::notifications.sender')],
             ['data' => 'type', 'title' => trans('web::notifications.type')],
         ];
     }

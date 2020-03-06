@@ -22,7 +22,6 @@
 
 namespace Seat\Web\Http\DataTables\Corporation\Military;
 
-use Seat\Eveapi\Models\Killmails\CorporationKillmail;
 use Seat\Web\Http\DataTables\Common\Military\AbstractKillMailDataTable;
 
 /**
@@ -32,11 +31,4 @@ use Seat\Web\Http\DataTables\Common\Military\AbstractKillMailDataTable;
  */
 class KillMailDataTable extends AbstractKillMailDataTable
 {
-    /**
-     * @return \Illuminate\Database\Eloquent\Builder
-     */
-    public function query()
-    {
-        return CorporationKillmail::orderByDesc('killmail_id');
-    }
 }

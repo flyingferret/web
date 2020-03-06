@@ -8,28 +8,28 @@
 
     <div class="col-md-6">
 
-      <div class="panel panel-default">
-        <div class="panel-heading">
-          <h3 class="panel-title">{{ trans('web::seat.summary') }}</h3>
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">{{ trans('web::seat.summary') }}</h3>
         </div>
-        <div class="panel-body">
+        <div class="card-body">
 
           <dl>
-            <dt><i class="fa fa-handshake-o"></i> {{ trans('web::seat.shares') }}</dt>
+            <dt><i class="far fa-handshake"></i> {{ trans('web::seat.shares') }}</dt>
             <dd>{{ $sheet->shares }}</dd>
 
-            <dt><i class="fa fa-users"></i> {{ trans('web::seat.member_capacity') }}</dt>
+            <dt><i class="fas fa-users"></i> {{ trans('web::seat.member_capacity') }}</dt>
             <dd>{{ $sheet->member_count }} {{ trans_choice('web::seat.member', $sheet->member_count) }}</dd>
           </dl>
 
         </div>
       </div>
 
-      <div class="panel panel-default">
-        <div class="panel-heading">
-          <h3 class="panel-title">{{ trans('web::seat.description') }}</h3>
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">{{ trans('web::seat.description') }}</h3>
         </div>
-        <div class="panel-body">
+        <div class="card-body">
 
           {!! clean_ccp_html($sheet->description) !!}
 
@@ -38,33 +38,53 @@
     </div>
     <div class="col-md-6">
 
-      <div class="panel panel-default">
-        <div class="panel-heading">
-          <h3 class="panel-title">{{ trans('web::seat.divisional_information') }}</h3>
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">{{ trans('web::seat.divisional_information') }}</h3>
         </div>
-        <div class="panel-body">
+        <div class="card-body">
 
           <dl>
-            <dt><i class="fa fa-cubes"></i> {{ trans('web::seat.corporation_divisions') }}</dt>
+            <dt><i class="fas fa-cubes"></i> {{ trans('web::seat.corporation_divisions') }}</dt>
             <dd>
               <ol>
-                @foreach($divisions as $division)
-                  <li>{{ $division->name }}</li>
+                @foreach($asset_divisions as $asset_division)
+                  @switch(true)
+                    @case($asset_division->division == 1 && auth()->user()->has('corporation.asset_first_division'))
+                    @case($asset_division->division == 2 && auth()->user()->has('corporation.asset_second_division'))
+                    @case($asset_division->division == 3 && auth()->user()->has('corporation.asset_third_division'))
+                    @case($asset_division->division == 4 && auth()->user()->has('corporation.asset_fourth_division'))
+                    @case($asset_division->division == 5 && auth()->user()->has('corporation.asset_fifth_division'))
+                    @case($asset_division->division == 6 && auth()->user()->has('corporation.asset_sixth_division'))
+                    @case($asset_division->division == 7 && auth()->user()->has('corporation.asset_seventh_division'))
+                      <li>{{ $asset_division->name }}</li>
+                    @break
+                  @endswitch
                 @endforeach
               </ol>
             </dd>
           </dl>
 
           <dl>
-            <dt><i class="fa fa-money"></i> {{ trans('web::seat.wallet_divisions') }}</dt>
+            <dt><i class="far fa-money-bill-alt"></i> {{ trans('web::seat.wallet_divisions') }}</dt>
             <dd>
               <ol>
                 @foreach($wallet_divisions as $wallet_division)
-                  @if(is_null($wallet_division->name))
-                    <li>Master</li>
-                  @else
-                    <li>{{ $wallet_division->name }}</li>
-                  @endif
+                  @switch(true)
+                    @case($wallet_division->division == 1 && auth()->user()->has('corporation.wallet_first_division'))
+                    @case($wallet_division->division == 2 && auth()->user()->has('corporation.wallet_second_division'))
+                    @case($wallet_division->division == 3 && auth()->user()->has('corporation.wallet_third_division'))
+                    @case($wallet_division->division == 4 && auth()->user()->has('corporation.wallet_fourth_division'))
+                    @case($wallet_division->division == 5 && auth()->user()->has('corporation.wallet_fifth_division'))
+                    @case($wallet_division->division == 6 && auth()->user()->has('corporation.wallet_sixth_division'))
+                    @case($wallet_division->division == 7 && auth()->user()->has('corporation.wallet_seventh_division'))
+                      @if(is_null($wallet_division->name))
+                        <li>Master</li>
+                      @else
+                        <li>{{ $wallet_division->name }}</li>
+                      @endif
+                    @break
+                  @endswitch
                 @endforeach
               </ol>
             </dd>

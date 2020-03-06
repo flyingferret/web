@@ -48,13 +48,16 @@ abstract class AbstractMarketDataTable extends DataTable
             ->editColumn('price', function ($row) {
                 return number($row->price);
             })
-            ->addColumn('volume', function ($row) {
+            ->addColumn('expires', function ($row) {
+                return view('web::partials.date', ['datetime' => carbon($row->issued)->addDays($row->duration)]);
+            })
+            ->editColumn('volume_total', function ($row) {
                 return sprintf('%s / %s', number($row->volume_remain, 0), number($row->volume_total, 0));
             })
             ->addColumn('total', function ($row) {
                 return number($row->price * $row->volume_total);
             })
-            ->addColumn('type', function ($row) {
+            ->editColumn('type.typeName', function ($row) {
                 return view('web::partials.type', ['type_id' => $row->type->typeID, 'type_name' => $row->type->typeName]);
             })
             ->filterColumn('is_buy_order', function ($query, $keyword) {
@@ -81,9 +84,9 @@ abstract class AbstractMarketDataTable extends DataTable
                     $sub_query->whereRaw('typeName LIKE ?', ["%$keyword%"]);
                 });
             })
+            ->orderColumn('expires', 'DATE_ADD(issued, INTERVAL duration DAY) $1')
             ->orderColumn('total', '(price * volume_total) $1')
             ->orderColumn('volume', '(volume_total - volume_remain) $1')
-            ->rawColumns(['issued', 'is_buy_order', 'type'])
             ->make(true);
     }
 
@@ -112,12 +115,13 @@ abstract class AbstractMarketDataTable extends DataTable
     {
         return [
             ['data' => 'issued', 'title' => trans('web::market.issued')],
+            ['data' => 'expires', 'title' => trans('web::market.expires')],
             ['data' => 'is_buy_order', 'title' => trans('web::market.order')],
             ['data' => 'range', 'title' => trans('web::market.range')],
-            ['data' => 'volume', 'title' => trans('web::market.volume')],
+            ['data' => 'volume_total', 'title' => trans('web::market.volume')],
             ['data' => 'price', 'title' => trans('web::market.price')],
             ['data' => 'total', 'title' => trans('web::market.total')],
-            ['data' => 'type', 'title' => trans('web::market.type'), 'orderable' => false],
+            ['data' => 'type.typeName', 'title' => trans('web::market.type')],
         ];
     }
 }

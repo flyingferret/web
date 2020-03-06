@@ -6,22 +6,24 @@
 
 @section('character_content')
 
-  <div class="panel panel-default">
-    <div class="panel-heading">
-      <h3 class="panel-title">{{ trans('web::seat.contracts') }}</h3>
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title">{{ trans('web::seat.contracts') }}</h3>
     </div>
-    <div class="panel-body">
-      <div class="margin-bottom">
-        <select multiple="multiple" id="dt-character-selector" class="form-control">
+    <div class="card-body">
+      <div class="mb-3">
+        <select multiple="multiple" id="dt-character-selector" class="form-control" style="width: 100%;">
           @foreach($characters as $character)
-            @if($character->id == $request->character_id)
-              <option selected="selected" value="{{ $character->id }}">{{ $character->name }}</option>
+            @if($character->character_id == $request->character_id)
+              <option selected="selected" value="{{ $character->character_id }}">{{ $character->name }}</option>
             @else
-              <option value="{{ $character->id }}">{{ $character->name }}</option>
+              <option value="{{ $character->character_id }}">{{ $character->name }}</option>
             @endif
           @endforeach
         </select>
       </div>
+
+      @include('web::common.contracts.buttons.filters')
 
       {{ $dataTable->table() }}
     </div>

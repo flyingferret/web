@@ -22,6 +22,7 @@
 
 namespace Seat\Web;
 
+use App\Providers\AbstractSeatPlugin;
 use Illuminate\Auth\Events\Attempting;
 use Illuminate\Auth\Events\Login as LoginEvent;
 use Illuminate\Auth\Events\Logout as LogoutEvent;
@@ -29,13 +30,13 @@ use Illuminate\Foundation\AliasLoader;
 use Illuminate\Routing\Router;
 use Illuminate\Support\Facades\Validator;
 use Laravel\Horizon\Horizon;
-use Laravel\Socialite\SocialiteManager;
-use Seat\Services\AbstractSeatPlugin;
+use Seat\Eveapi\Models\Assets\CharacterAsset;
+use Seat\Eveapi\Models\Character\CharacterAffiliation;
+use Seat\Eveapi\Models\Character\CharacterSkill;
 use Seat\Web\Events\Attempt;
 use Seat\Web\Events\Login;
 use Seat\Web\Events\Logout;
 use Seat\Web\Events\SecLog;
-use Seat\Web\Extentions\EveOnlineProvider;
 use Seat\Web\Http\Composers\CharacterLayout;
 use Seat\Web\Http\Composers\CharacterMenu;
 use Seat\Web\Http\Composers\CharacterSummary;
@@ -53,6 +54,13 @@ use Seat\Web\Http\Middleware\Bouncer\KeyBouncer;
 use Seat\Web\Http\Middleware\Locale;
 use Seat\Web\Http\Middleware\RegistrationAllowed;
 use Seat\Web\Http\Middleware\Requirements;
+use Seat\Web\Models\Squads\SquadMember;
+use Seat\Web\Models\Squads\SquadRole;
+use Seat\Web\Observers\CharacterAffiliationObserver;
+use Seat\Web\Observers\CharacterAssetObserver;
+use Seat\Web\Observers\CharacterSkillObserver;
+use Seat\Web\Observers\SquadMemberObserver;
+use Seat\Web\Observers\SquadRoleObserver;
 
 /**
  * Class WebServiceProvider.
@@ -60,16 +68,6 @@ use Seat\Web\Http\Middleware\Requirements;
  */
 class WebServiceProvider extends AbstractSeatPlugin
 {
-    /**
-     * The environment variable name used to setup the queue daemon balancing mode.
-     */
-    const QUEUE_BALANCING_MODE = 'QUEUE_BALANCING_MODE';
-
-    /**
-     * The environment variable name used to setup the queue workers amount.
-     */
-    const QUEUE_BALANCING_WORKERS = 'QUEUE_WORKERS';
-
     /**
      * Bootstrap the application services.
      *
@@ -130,11 +128,27 @@ class WebServiceProvider extends AbstractSeatPlugin
     {
 
         $this->publishes([
-            __DIR__ . '/resources/assets'                                        => public_path('web'),
+            __DIR__ . '/resources/css'                                           => public_path('web/css'),
+            __DIR__ . '/resources/img'                                           => public_path('web/img'),
+            __DIR__ . '/resources/js'                                            => public_path('web/js'),
 
-            // Font Awesome Pulled from packagist
-            base_path('vendor/components/font-awesome/css/font-awesome.min.css') => public_path('web/css/font-awesome.min.css'),
-            base_path('vendor/components/font-awesome/fonts')                    => public_path('web/fonts'),
+            // Bootstrap pulled from packagist
+            base_path('vendor/twbs/bootstrap/dist/css/bootstrap.min.css')                           => public_path('web/css/bootstrap.min.css'),
+            base_path('vendor/almasaeed2010/adminlte/plugins/bootstrap/js/bootstrap.bundle.min.js') => public_path('web/js/bootstrap.bundle.min.js'),
+
+            // Datatables pulled from packagist
+            base_path('vendor/datatables/datatables/media/css/dataTables.bootstrap4.min.css') => public_path('web/css/dataTables.bootstrap4.min.css'),
+            base_path('vendor/datatables/datatables/media/js/jquery.dataTables.min.js')       => public_path('web/js/jquery.dataTables.min.js'),
+            base_path('vendor/datatables/datatables/media/js/dataTables.dataTables.min.js')   => public_path('web/js/dataTables.dataTables.min.js'),
+            base_path('vendor/datatables/datatables/media/js/dataTables.bootstrap4.min.js')   => public_path('web/js/dataTables.bootstrap4.min.js'),
+
+            // AdminLTE pulled from packagist
+            base_path('vendor/almasaeed2010/adminlte/dist/css/adminlte.min.css') => public_path('web/css/adminlte.min.css'),
+            base_path('vendor/almasaeed2010/adminlte/dist/js/adminlte.min.js')   => public_path('web/js/adminlte.min.js'),
+
+            // Font Awesome pulled from packagist
+            base_path('vendor/components/font-awesome/css/all.min.css')          => public_path('web/css/all.min.css'),
+            base_path('vendor/components/font-awesome/webfonts')                 => public_path('web/webfonts'),
         ]);
     }
 
@@ -215,15 +229,15 @@ class WebServiceProvider extends AbstractSeatPlugin
     public function add_translations()
     {
 
-        $this->loadTranslationsFrom(__DIR__ . '/lang', 'web');
+        $this->loadTranslationsFrom(__DIR__ . '/resources/lang', 'web');
     }
 
     /**
      * Include the middleware needed.
      *
-     * @param $router
+     * @param \Illuminate\Routing\Router $router
      */
-    public function add_middleware($router)
+    public function add_middleware(Router $router)
     {
 
         // Authenticate checks that the session is
@@ -264,6 +278,13 @@ class WebServiceProvider extends AbstractSeatPlugin
 
         // Custom Events
         $this->app->events->listen('security.log', SecLog::class);
+
+        // Squads Events
+        CharacterAffiliation::observe(CharacterAffiliationObserver::class);
+        CharacterAsset::observe(CharacterAssetObserver::class);
+        CharacterSkill::observe(CharacterSkillObserver::class);
+        SquadMember::observe(SquadMemberObserver::class);
+        SquadRole::observe(SquadRoleObserver::class);
     }
 
     /**
@@ -294,22 +315,51 @@ class WebServiceProvider extends AbstractSeatPlugin
         });
 
         // attempt to parse the QUEUE_BALANCING variable into a boolean
-        $balancing_mode = filter_var(env(self::QUEUE_BALANCING_MODE, false), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+        $balancing_mode = filter_var(config('seat.config.balancing', false), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
         // in case the variable cannot be parsed into a boolean, assign the environment value itself
         if (is_null($balancing_mode))
-            $balancing_mode = env(self::QUEUE_BALANCING_MODE, false);
+            $balancing_mode = 'auto';
 
         // Configure the workers for SeAT.
+
+        /*
+        |-----------------------------------------------------------------------------------------
+        | Queue Worker Configuration
+        | ----------------------------------------------------------------------------------------
+        | Default queue is used to collect all jobs with no queue specified
+        | High queue is used to collect all jobs which need to be execute as soon as possible
+        | Characters queue is used to collect characters jobs dispatched by the scheduler
+        | Corporations queue is used to collect corporations jobs dispatched by the scheduler
+        | Notifications queue is used to collect notifications jobs
+        */
+
+        $horizon_environment_tpl = [
+            'connection' => 'redis',
+            'queue'      => ['default', 'high', 'characters', 'corporations', 'public', 'notifications'],
+            'balance'    => $balancing_mode,
+            'tries'      => 3,
+            'timeout'    => 900, // 15 minutes
+        ];
+
+        $horizon_environment = $horizon_environment_tpl;
+
+        // adapt queue worker configuration according to auto balancing mode
+        if ($balancing_mode === 'auto') {
+            $horizon_environment['minProcesses'] = 1;
+            $horizon_environment['maxProcesses'] = (int) config('seat.config.workers', $horizon_environment['minProcesses'] * 2);
+        }
+
+        // adapt queue worker configuration according to simple balancing mode
+        if ($balancing_mode === 'simple') {
+            $horizon_environment['processes'] = (int) config('seat.config.workers', count($horizon_environment['queue']));
+        }
+
         $horizon_environments = [
+            'production' => [
+                'seat-workers' => $horizon_environment,
+            ],
             'local' => [
-                'seat-workers' => [
-                    'connection' => 'redis',
-                    'queue'      => ['high', 'medium', 'low', 'default'],
-                    'balance'    => $balancing_mode,
-                    'processes'  => (int) env(self::QUEUE_BALANCING_WORKERS, 4),
-                    'tries'      => 1,
-                    'timeout'    => 900, // 15 minutes
-                ],
+                'seat-workers' => $horizon_environment,
             ],
         ];
 
@@ -330,8 +380,6 @@ class WebServiceProvider extends AbstractSeatPlugin
         $this->mergeConfigFrom(
             __DIR__ . '/Config/web.config.php', 'web.config');
         $this->mergeConfigFrom(
-            __DIR__ . '/Config/web.permissions.php', 'web.permissions');
-        $this->mergeConfigFrom(
             __DIR__ . '/Config/web.locale.php', 'web.locale');
 
         // Menu Configurations
@@ -344,6 +392,17 @@ class WebServiceProvider extends AbstractSeatPlugin
 
         // Helper configurations
         $this->mergeConfigFrom(__DIR__ . '/Config/web.jobnames.php', 'web.jobnames');
+        $this->mergeConfigFrom(__DIR__ . '/Config/seat.php', 'seat.config');
+
+        // Permissions
+        $this->registerPermissions(__DIR__ . '/Config/Permissions/character.php', 'character');
+        $this->registerPermissions(__DIR__ . '/Config/Permissions/corporation.php', 'corporation');
+        $this->registerPermissions(__DIR__ . '/Config/Permissions/global.php', 'global');
+        $this->registerPermissions(__DIR__ . '/Config/Permissions/mail.php', 'mail');
+        $this->registerPermissions(__DIR__ . '/Config/Permissions/people.php', 'people');
+        $this->registerPermissions(__DIR__ . '/Config/Permissions/search.php', 'search');
+
+        //dd($this->app['config']);
 
         // Register any extra services.
         $this->register_services();
@@ -360,25 +419,6 @@ class WebServiceProvider extends AbstractSeatPlugin
      */
     public function register_services()
     {
-
-        // Register the Socialite Factory.
-        // From: Laravel\Socialite\SocialiteServiceProvider
-        $this->app->singleton('Laravel\Socialite\Contracts\Factory', function ($app) {
-
-            return new SocialiteManager($app);
-        });
-
-        // Slap in the Eveonline Socialite Provider
-        $eveonline = $this->app->make('Laravel\Socialite\Contracts\Factory');
-        $eveonline->extend('eveonline',
-            function ($app) use ($eveonline) {
-
-                $config = $app['config']['services.eveonline'];
-
-                return $eveonline->buildProvider(EveOnlineProvider::class, $config);
-            }
-        );
-
         // Register the datatables package! Thanks
         //  https://laracasts.com/discuss/channels/laravel/register-service-provider-and-facade-within-service-provider
         $this->app->register('Yajra\DataTables\DataTablesServiceProvider');

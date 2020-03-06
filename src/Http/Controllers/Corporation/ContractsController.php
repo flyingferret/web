@@ -26,6 +26,8 @@ use Seat\Eveapi\Models\Contracts\ContractDetail;
 use Seat\Web\Http\Controllers\Controller;
 use Seat\Web\Http\DataTables\Corporation\Financial\ContractDataTable;
 use Seat\Web\Http\DataTables\Scopes\CorporationScope;
+use Seat\Web\Http\DataTables\Scopes\Filters\ContractStatusScope;
+use Seat\Web\Http\DataTables\Scopes\Filters\ContractTypeScope;
 
 /**
  * Class ContractsController.
@@ -34,14 +36,16 @@ use Seat\Web\Http\DataTables\Scopes\CorporationScope;
 class ContractsController extends Controller
 {
     /**
-     * @param $corporation_id
-     *
-     * @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View
+     * @param int $corporation_id
+     * @param \Seat\Web\Http\DataTables\Corporation\Financial\ContractDataTable $dataTable
+     * @return mixed
      */
     public function index(int $corporation_id, ContractDataTable $dataTable)
     {
 
         return $dataTable->addScope(new CorporationScope([$corporation_id]))
+            ->addScope(new ContractTypeScope(request()->input('filters.type')))
+            ->addScope(new ContractStatusScope(request()->input('filters.status')))
             ->render('web::corporation.contracts');
     }
 

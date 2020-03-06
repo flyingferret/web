@@ -37,9 +37,8 @@ class SkillsController extends Controller
     use EveRepository;
 
     /**
-     * @param $character_id
-     *
-     * @return \Illuminate\View\View
+     * @param int $character_id
+     * @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View
      */
     public function getSkills(int $character_id)
     {
@@ -52,8 +51,7 @@ class SkillsController extends Controller
     }
 
     /**
-     * @param $character_id
-     *
+     * @param int $character_id
      * @return \Illuminate\Http\JsonResponse
      */
     public function getCharacterSkillsLevelChartData(int $character_id)
@@ -86,11 +84,10 @@ class SkillsController extends Controller
     }
 
     /**
-     * @param $character_id
-     *
+     * @param int $character_id
      * @return \Illuminate\Http\JsonResponse
      */
-    public function getCharacterSkillsCoverageChartData($character_id)
+    public function getCharacterSkillsCoverageChartData(int $character_id)
     {
 
         if ($character_id == 1) {
@@ -120,6 +117,23 @@ class SkillsController extends Controller
                     'pointBorderColor'     => '#fff',
                 ],
             ],
+        ]);
+    }
+
+    /**
+     * @param int $character_id
+     * @return \Symfony\Component\HttpFoundation\StreamedResponse
+     */
+    public function export(int $character_id)
+    {
+        return response()->streamDownload(function () use ($character_id) {
+            $skills = $this->getCharacterSkillsInformation($character_id);
+
+            echo $skills->map(function ($skill) {
+                return sprintf("%s\t%d", $skill->typeName, $skill->trained_skill_level);
+            })->implode(PHP_EOL);
+        }, sprintf('characters_%d_skills.txt', $character_id), [
+            'Content-Type' => 'text/plain',
         ]);
     }
 }

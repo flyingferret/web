@@ -1,39 +1,37 @@
-<div class="panel panel-default">
-  <div class="panel-heading">
-    <h3 class="panel-title">Characters Skills</h3>
+<div class="card">
+  <div class="card-header">
+    <h3 class="card-title">Characters Skills</h3>
   </div>
-  <div class="panel-body">
-
-    <table class="table compact table-condensed table-hover table-responsive"
-           id="character-skills">
+  <div class="card-body">
+    <table class="table table-condensed table-striped table-hover" id="character-skills">
       <thead>
-      <tr>
-        <th>{{ trans_choice('web::seat.name', 1) }}</th>
-        <th>{{ trans_choice('web::seat.corporation', 1) }}</th>
-        <th>{{ trans_choice('web::seat.group', 1) }}</th>
-        <th>{{ trans_choice('web::seat.type', 1) }}</th>
-        <th>{{ trans('web::seat.level') }}</th>
-      </tr>
+        <tr>
+          <th>{{ trans_choice('web::seat.name', 1) }}</th>
+          <th>{{ trans_choice('web::seat.corporation', 1) }}</th>
+          <th>{{ trans_choice('web::seat.alliance', 1) }}</th>
+          <th>{{ trans_choice('web::seat.group', 1) }}</th>
+          <th>{{ trans_choice('web::seat.type', 1) }}</th>
+          <th>{{ trans('web::seat.level') }}</th>
+        </tr>
       </thead>
     </table>
-
   </div>
 </div>
 
 @push('javascript')
 
   <script type="text/javascript">
-
     $('table#character-skills').DataTable({
       processing  : true,
       serverSide  : true,
       ajax        : '{{ route('support.search.skills.data') }}',
       columns     : [
-        {data: 'character_name', name: 'character_infos.name'},
-        {data: 'corporation_id', name: 'character_infos.corporation_id'},
-        {data: 'groupName', name: 'invGroups.groupName'},
-        {data: 'typeName', name: 'invTypes.typeName'},
-        {data: 'trained_skill_level', name: 'character_skills.trained_skill_level'}
+        {data: 'character.name', name: 'character.name'},
+        {data: 'character.affiliation.corporation.name', name: 'character.affiliation.corporation.name'},
+        {data: 'character.affiliation.alliance.name', name: 'character.affiliation.alliance.name'},
+        {data: 'type.group.groupName', name: 'type.group.groupName'},
+        {data: 'type.typeName', name: 'type.typeName'},
+        {data: 'trained_skill_level', name: 'trained_skill_level'}
       ],
       drawCallback: function () {
         $('img').unveil(100);
@@ -44,8 +42,6 @@
       },
       order       : [[0, "asc"]]
     });
-
-
   </script>
 
 @endpush

@@ -22,6 +22,7 @@
 
 namespace Seat\Web\Http\Controllers\Character;
 
+use Illuminate\Support\Arr;
 use Seat\Web\Http\Controllers\Controller;
 use Seat\Web\Http\DataTables\Character\CharacterDataTable;
 use Seat\Web\Http\DataTables\Scopes\CharacterScope;
@@ -42,16 +43,50 @@ class CharacterController extends Controller
         if (auth()->user()->hasSuperUser())
             return $dataTable->render('web::character.list');
 
-        $owned_character_ids = auth()->user()->associatedCharacterIds()->toArray();
-        $allowed_character_ids = array_keys(array_get(auth()->user()->getAffiliationMap(), 'char'));
+        $allowed_characters = array_keys(Arr::get(auth()->user()->getAffiliationMap(), 'char'));
 
         return $dataTable
-            ->addScope(new CharacterScope('character.sheet', auth()->user()->id, array_merge($owned_character_ids, $allowed_character_ids)))
+            ->addScope(new CharacterScope('character.sheet', auth()->user()->id, $allowed_characters))
             ->render('web::character.list');
     }
 
+    /**
+     * @param int $character_id
+     * @return \Illuminate\Http\RedirectResponse
+     */
     public function show(int $character_id)
     {
+        // by default, redirect user to character sheet
+        if (auth()->user()->has('character.sheet'))
+            return redirect()->route('character.view.sheet', [
+                'character_id' => $character_id,
+            ]);
 
+        // collect all registered routes for character scope and sort them alphabetically
+        $configured_routes = array_values(Arr::sort(config('package.character.menu'), function ($menu) {
+            return $menu['name'];
+        }));
+
+        // for each route, check if the current user got a valid access and redirect him to the first valid entry
+        foreach ($configured_routes as $menu) {
+            $permissions = $menu['permission'];
+
+            if (! is_array($permissions))
+                $permissions = [$permissions];
+
+            foreach ($permissions as $permission) {
+                if (auth()->user()->has($permission))
+                    return redirect()->route($menu['route'], [
+                        'character_id' => $character_id,
+                    ]);
+            }
+        }
+
+        $message = sprintf('Request to %s was denied by the characterbouncer.', request()->path());
+
+        event('security.log', [$message, 'authorization']);
+
+        // Redirect away from the original request
+        return redirect()->route('auth.unauthorized');
     }
 }

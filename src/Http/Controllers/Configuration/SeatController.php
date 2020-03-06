@@ -22,12 +22,12 @@
 
 namespace Seat\Web\Http\Controllers\Configuration;
 
+use App\Providers\AbstractSeatPlugin;
 use Cache;
 use Exception;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\RequestException;
 use Parsedown;
-use Seat\Services\AbstractSeatPlugin;
 use Seat\Web\Http\Controllers\Controller;
 use Seat\Web\Http\Validation\PackageChangelog;
 use Seat\Web\Http\Validation\PackageVersionCheck;
@@ -150,8 +150,10 @@ class SeatController extends Controller
         $versions = $json_array['package']['versions'];
 
         foreach ($versions as $available_version => $metadata) {
-            // ignore any untagged versions
-            if (strpos($available_version, 'dev') !== false)
+
+            // ignore any unstable versions
+            if (strpos($available_version, 'dev') !== false || strpos($available_version, 'rc') !== false ||
+                strpos($available_version, 'alpha') !== false || strpos($available_version, 'beta') !== false)
                 continue;
 
             // return outdated on the first package which is greater than installed version

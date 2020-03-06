@@ -1,4 +1,4 @@
-<h4>
+<h5>
   <i class="fa fa-map"></i>
   @if (! is_null($extraction->moon) && ! is_null($extraction->moon->region))
     {{ $extraction->moon->region->name }}
@@ -15,7 +15,7 @@
   @else
     {{ sprintf('%s %s', trans('web::seat.unknown'), trans('web::seat.region')) }}
   @endif
-</h4>
+</h5>
 <span class="text-muted">
   <i class="fa fa-globe"></i>
   @if (! is_null($extraction->moon))
@@ -46,27 +46,29 @@
     @foreach($extraction->moon->moon_contents as $content)
     @if(! is_null($content->type))
     <tr>
-      <td>{!! img('type', $content->type->typeID, 32, ['class' => 'img-circle eve-icon small-icon'], false) !!} {{ $content->type->typeName }}</td>
-      <td>{{ number($content->rate * 100) }} %</td>
+      <td>
+        @include('web::partials.type', ['type_id' => $content->type->typeID, 'type_name' => $content->type->typeName])
+      </td>
+      <td>{{ number_format($content->rate * 100) }} %</td>
       <td>
         @switch($content->type->marketGroupID)
           @case(2396)
-            <span class="label label-success">Gaz</span>
+            <span class="badge badge-success">Gaz</span>
             @break
           @case(2397)
-            <span class="label label-primary">R8</span>
+            <span class="badge badge-primary">R8</span>
             @break
           @case(2398)
-            <span class="label label-info">R16</span>
+            <span class="badge badge-info">R16</span>
             @break
           @case(2400)
-            <span class="label label-warning">R32</span>
+            <span class="badge badge-warning">R32</span>
             @break
           @case(2401)
-            <span class="label label-danger">R64</span>
+            <span class="badge badge-danger">R64</span>
             @break
           @default
-            <span class="label label-default">ORE</span>
+            <span class="badge badge-default">ORE</span>
         @endswitch
       </td>
     </tr>

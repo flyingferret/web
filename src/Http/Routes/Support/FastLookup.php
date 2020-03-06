@@ -25,6 +25,11 @@ Route::get('/groups', [
     'uses' => 'FastLookupController@getGroups',
 ]);
 
+Route::get('/users', [
+    'as'   => 'fastlookup.users',
+    'uses' => 'FastLookupController@getUsers',
+]);
+
 Route::get('/characters', [
     'as'   => 'fastlookup.characters',
     'uses' => 'FastLookupController@getCharacters',
@@ -38,4 +43,20 @@ Route::get('/corporations', [
 Route::get('/alliances', [
     'as'   => 'fastlookup.alliances',
     'uses' => 'FastLookupController@getAlliances',
+]);
+
+Route::get('/entities', [
+    'as'         => 'fastlookup.entities',
+    'uses'       => 'FastLookupController@getEntities',
+    'middleware' => 'bouncer:global.superuser',
+]);
+
+Route::get('/items', [
+    'as'   => 'fastlookup.items',
+    'uses' => 'FastLookupController@getItems',
+]);
+
+Route::get('/skills', [
+    'as'   => 'fastlookup.skills',
+    'uses' => 'FastLookupController@getSkills',
 ]);

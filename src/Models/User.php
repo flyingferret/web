@@ -33,7 +33,8 @@ use Seat\Eveapi\Models\RefreshToken;
 use Seat\Services\Models\UserSetting;
 use Seat\Services\Settings\Profile;
 use Seat\Web\Acl\AccessChecker;
-use Seat\Web\Models\Acl\Affiliation;
+use Seat\Web\Models\Acl\Role;
+use Seat\Web\Models\Squads\Squad;
 
 /**
  * Class User.
@@ -127,7 +128,7 @@ class User extends Model implements AuthenticatableContract, CanResetPasswordCon
     /**
      * @var bool
      */
-    public $incrementing = false;
+    public $incrementing = true;
 
     /**
      * @var array
@@ -142,7 +143,7 @@ class User extends Model implements AuthenticatableContract, CanResetPasswordCon
      * @var array
      */
     protected $fillable = [
-        'name', 'email', 'character_owner_hash', 'group_id',
+        'name', 'main_character_id', 'active',
     ];
 
     /**
@@ -170,9 +171,7 @@ class User extends Model implements AuthenticatableContract, CanResetPasswordCon
 
         // Cleanup the user
         $this->login_history()->delete();
-        $this->affiliations()->detach();
-        $this->refresh_token()->forceDelete();
-
+        $this->refresh_tokens()->delete();
         $this->settings()->delete();
 
         return parent::delete();
@@ -190,25 +189,19 @@ class User extends Model implements AuthenticatableContract, CanResetPasswordCon
     }
 
     /**
-     * This user may be affiliated manually to
-     * other characterID's and or corporations.
-     *
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsToMany
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany
      */
-    public function affiliations()
+    public function refresh_tokens()
     {
-
-        return $this->belongsToMany(Affiliation::class)
-            ->withPivot('not');
+        return $this->hasMany(RefreshToken::class);
     }
 
     /**
-     * @return \Illuminate\Database\Eloquent\Relations\HasOne
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsToMany
      */
-    public function refresh_token()
+    public function roles()
     {
-
-        return $this->hasOne(RefreshToken::class, 'character_id', 'id');
+        return $this->belongsToMany(Role::class);
     }
 
     /**
@@ -217,38 +210,42 @@ class User extends Model implements AuthenticatableContract, CanResetPasswordCon
     public function settings()
     {
 
-        return $this->hasMany(UserSetting::class, 'group_id', 'group_id');
+        return $this->hasMany(UserSetting::class);
     }
 
     /**
-     * Get the group the current user belongs to.
-     *
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     * @return \Illuminate\Database\Eloquent\Relations\HasManyThrough
      */
-    public function group()
+    public function characters()
     {
 
-        return $this->belongsTo(Group::class);
+        return $this->hasManyThrough(CharacterInfo::class, RefreshToken::class, 'user_id', 'character_id');
     }
 
     /**
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     * @return \Illuminate\Database\Eloquent\Relations\HasOne
      */
-    public function character()
+    public function main_character()
     {
-
-        return $this->belongsTo(CharacterInfo::class, 'id', 'character_id');
+        return $this->hasOne(CharacterInfo::class, 'character_id', 'main_character_id')
+            ->withDefault();
     }
 
     /**
-     * An alias attribute for the character_id.
-     *
-     * @return mixed
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsToMany
      */
-    public function getCharacterIdAttribute()
+    public function moderators()
     {
+        return $this->belongsToMany(Squad::class, 'squad_moderator');
+    }
 
-        return $this->id;
+    /**
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsToMany
+     */
+    public function squads()
+    {
+        return $this->belongsToMany(Squad::class, 'squad_member')
+            ->withPivot('created_at');
     }
 
     /**
@@ -261,7 +258,7 @@ class User extends Model implements AuthenticatableContract, CanResetPasswordCon
     public function getEmailAttribute()
     {
 
-        return Profile::get('email_address', $this->group_id) ?: '';
+        return Profile::get('email_address', $this->id) ?: '';
     }
 
     /**
@@ -275,11 +272,24 @@ class User extends Model implements AuthenticatableContract, CanResetPasswordCon
      */
     public function associatedCharacterIds()
     {
+        return $this->characters->pluck('character_id')->flatten();
+    }
 
-        if (! $this->group) {
-            return collect();
-        }
+    /**
+     * @param \Illuminate\Database\Eloquent\Builder $query
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function scopeStandard($query)
+    {
+        return $query->where('name', '<>', 'admin');
+    }
 
-        return $this->group->users->pluck('id')->flatten();
+    /**
+     * @param \Illuminate\Database\Eloquent\Builder $query
+     * @return \Illuminate\Database\Eloquent\Builder
+     */
+    public function scopeSystem($query)
+    {
+        return $query->where('name', 'admin');
     }
 }

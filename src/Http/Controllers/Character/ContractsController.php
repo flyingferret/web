@@ -23,9 +23,12 @@
 namespace Seat\Web\Http\Controllers\Character;
 
 use Seat\Eveapi\Models\Contracts\ContractDetail;
+use Seat\Eveapi\Models\RefreshToken;
 use Seat\Web\Http\Controllers\Controller;
 use Seat\Web\Http\DataTables\Character\Financial\ContractDataTable;
 use Seat\Web\Http\DataTables\Scopes\CharacterScope;
+use Seat\Web\Http\DataTables\Scopes\Filters\ContractStatusScope;
+use Seat\Web\Http\DataTables\Scopes\Filters\ContractTypeScope;
 use Seat\Web\Models\User;
 
 /**
@@ -35,16 +38,22 @@ use Seat\Web\Models\User;
 class ContractsController extends Controller
 {
     /**
-     * @param $character_id
-     *
-     * @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View
+     * @param int $character_id
+     * @param \Seat\Web\Http\DataTables\Character\Financial\ContractDataTable $dataTable
+     * @return mixed
      */
     public function index(int $character_id, ContractDataTable $dataTable)
     {
-        $characters = (User::find($character_id))->group->users;
+        $token = RefreshToken::where('character_id', $character_id)->first();
+        $characters = collect();
+        if ($token) {
+            $characters = User::with('characters')->find($token->user_id)->characters;
+        }
 
         return $dataTable
             ->addScope(new CharacterScope('character.contract', $character_id, request()->input('characters')))
+            ->addScope(new ContractTypeScope(request()->input('filters.type')))
+            ->addScope(new ContractStatusScope(request()->input('filters.status')))
             ->render('web::character.contracts', compact('characters'));
     }
 

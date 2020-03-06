@@ -24,6 +24,7 @@ namespace Seat\Web\Http\Controllers\Support;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Seat\Eveapi\Models\Alliances\Alliance;
 use Seat\Eveapi\Models\Character\CharacterInfo;
 use Seat\Eveapi\Models\Corporation\CorporationInfo;
 use Seat\Eveapi\Models\Universe\UniverseName;
@@ -117,6 +118,11 @@ class ResolveController extends Controller
             ->pipe(function ($collection) {
                 return $collection->when($collection->isNotEmpty(), function ($ids) {
                     return $this->resolveInternalCorporationIDs($ids);
+                });
+            })
+            ->pipe(function ($collection) {
+                return $collection->when($collection->isNotEmpty(), function ($ids) {
+                    return $this->resolveInternalAllianceIDs($ids);
                 });
             })
             ->chunk(1000)
@@ -233,13 +239,35 @@ class ResolveController extends Controller
     }
 
     /**
+     * @param \Illuminate\Support\Collection $ids
+     * @return \Illuminate\Support\Collection
+     */
+    private function resolveInternalAllianceIDs(Collection $ids)
+    {
+
+        // resolve names that are already in SeAT
+        // no unnecessary api calls if the request can be resolved internally.
+        $names = Alliance::whereIn('alliance_id', $ids->flatten()->toArray())
+            ->get()
+            ->map(function ($alliance) {
+                return collect([
+                    'id'       => $alliance->alliance_id,
+                    'name'     => $alliance->name,
+                    'category' => 'alliance',
+                ]);
+            });
+
+        return $this->cacheIDsAndReturnUnresolvedIDs($names, $ids);
+    }
+
+    /**
      * Resolve given set of ids with the help of eseye client and ESI
      * using a boolean algorithm if one of the ids in the collection of ids
      * is invalid.
      * If name could be resolved, save the name to universe_names table.
      *
      * @param \Illuminate\Support\Collection $ids
-     * @param                                $eseye
+     * @param \Seat\Eseye\Eseye $eseye
      */
     private function resolveIDsfromESI(Collection $ids, $eseye)
     {
@@ -336,11 +364,9 @@ class ResolveController extends Controller
 
         })->each(function ($chunk) {
 
-            $character = User::find($chunk);
+            $character = User::find($chunk)->main_character;
 
-            $maincharacter = is_null($character) ? null : $character->group->main_character;
-
-            $this->response[$chunk] = view('web::partials.maincharacter', compact('maincharacter'))->render();
+            $this->response[$chunk] = view('web::partials.character', compact('character'))->render();
         });
 
         return response()->json($this->response);

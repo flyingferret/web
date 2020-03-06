@@ -46,41 +46,53 @@ abstract class AbstractIndustryDataTable extends DataTable
                 return view('web::partials.date', ['datetime' => $row->end_date]);
             })
             ->editColumn('runs', function ($row) {
-                return number($row->runs, 0);
+                switch ($row->status) {
+                    case 'active':
+                        return sprintf('<span class="badge badge-primary">%s</span>', number($row->runs, 0));
+                    case 'cancelled':
+                        return sprintf('<span class="badge badge-danger">%s</span>', number($row->runs, 0));
+                    case 'delivered':
+                        return sprintf('<span class="badge badge-secondary">%s</span>', number($row->runs, 0));
+                    case 'paused':
+                        return sprintf('<span class="badge badge-warning">%s</span>', number($row->runs, 0));
+                    case 'ready':
+                        return sprintf('<span class="badge badge-success">%s</span>', number($row->runs, 0));
+                    default:
+                        return number($row->runs, 0);
+                }
             })
-            ->addColumn('location', function ($row) {
+            ->editColumn('location.name', function ($row) {
                 return $row->location->name;
             })
-            ->addColumn('activity', function ($row) {
-                return $row->activity->activityName;
+            ->editColumn('activity.activityName', function ($row) {
+                switch ($row->activity->activityName) {
+                    case 'Manufacturing':
+                        return '<i class="fas fa-industry"></i> ' . $row->activity->activityName;
+                    case 'Researching Time Efficiency':
+                        return '<i class="fas fa-hourglass-half"></i> ' . $row->activity->activityName;
+                    case 'Researching Material Efficiency':
+                        return '<i class="fas fa-gem"></i> ' . $row->activity->activityName;
+                    case 'Copying':
+                        return '<i class="fas fa-flask"></i> ' . $row->activity->activityName;
+                    case 'Invention':
+                        return '<i class="fas fa-microscope"></i> ' . $row->activity->activityName;
+                    case 'Reactions':
+                        return '<i class="fas fa-atom"></i> ' . $row->activity->activityName;
+                    default:
+                        return $row->activity->activityName;
+                }
             })
-            ->addColumn('blueprint', function ($row) {
-                return view('web::partials.type', ['type_id' => $row->blueprint->typeID, 'type_name' => $row->blueprint->typeName]);
+            ->editColumn('blueprint.typeName', function ($row) {
+                return view('web::partials.type', [
+                    'type_id' => $row->blueprint->typeID,
+                    'type_name' => $row->blueprint->typeName,
+                    'variation' => 'bpc',
+                ]);
             })
-            ->addColumn('product', function ($row) {
+            ->editColumn('product.typeName', function ($row) {
                 return view('web::partials.type', ['type_id' => $row->product->typeID, 'type_name' => $row->product->typeName]);
             })
-            ->filterColumn('location', function ($query, $keyword) {
-                return $query->whereHas('location', function ($sub_query) use ($keyword) {
-                    return $sub_query->whereRaw('name LIKE ?', ["%$keyword%"]);
-                });
-            })
-            ->filterColumn('activity', function ($query, $keyword) {
-                return $query->whereHas('activity', function ($sub_query) use ($keyword) {
-                    return $sub_query->whereRaw('activityName LIKE ?', ["%$keyword%"]);
-                });
-            })
-            ->filterColumn('blueprint', function ($query, $keyword) {
-                return $query->whereHas('blueprint', function ($sub_query) use ($keyword) {
-                    return $sub_query->whereRaw('typeName LIKE ?', ["%$keyword%"]);
-                });
-            })
-            ->filterColumn('product', function ($query, $keyword) {
-                return $query->whereHas('product', function ($sub_query) use ($keyword) {
-                    return $sub_query->whereRaw('typeName LIKE ?', ["%$keyword%"]);
-                });
-            })
-            ->rawColumns(['start_date', 'end_date', 'blueprint', 'product'])
+            ->rawColumns(['runs', 'activity.activityName'])
             ->make(true);
     }
 
@@ -92,6 +104,7 @@ abstract class AbstractIndustryDataTable extends DataTable
         return $this->builder()
             ->postAjax()
             ->columns($this->getColumns())
+            ->addTableClass('table-striped table-hover')
             ->parameters([
                 'drawCallback' => 'function() { $("[data-toggle=tooltip]").tooltip(); }',
             ]);
@@ -110,11 +123,11 @@ abstract class AbstractIndustryDataTable extends DataTable
         return [
             ['data' => 'start_date', 'title' => trans('web::industry.start')],
             ['data' => 'end_date', 'title' => trans('web::industry.end')],
-            ['data' => 'location', 'title' => trans('web::industry.location')],
-            ['data' => 'activity', 'title' => trans('web::industry.activity')],
+            ['data' => 'location.name', 'title' => trans('web::industry.location')],
+            ['data' => 'activity.activityName', 'title' => trans('web::industry.activity')],
             ['data' => 'runs', 'title' => trans('web::industry.runs')],
-            ['data' => 'blueprint', 'title' => trans('web::industry.blueprint')],
-            ['data' => 'product', 'title' => trans('web::industry.product')],
+            ['data' => 'blueprint.typeName', 'title' => trans('web::industry.blueprint')],
+            ['data' => 'product.typeName', 'title' => trans('web::industry.product')],
         ];
     }
 }

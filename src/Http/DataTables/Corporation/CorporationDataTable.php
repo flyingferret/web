@@ -53,29 +53,15 @@ class CorporationDataTable extends DataTable
                 return sprintf('%d/%d (%s%%)',
                     $row->member_count, $row->member_limit->limit, number($row->member_count / $row->member_limit->limit * 100));
             })
-            ->addColumn('ceo', function ($row) {
-                return view('web::partials.character', ['character' => $row->ceo_id]);
+            ->editColumn('ceo.name', function ($row) {
+                return view('web::partials.character', ['character' => $row->ceo]);
             })
-            ->addColumn('alliance', function ($row) {
+            ->editColumn('alliance.name', function ($row) {
                 if (! is_null($row->alliance_id))
-                    return view('web::partials.alliance', ['alliance' => $row->alliance_id]);
+                    return view('web::partials.alliance', ['alliance' => $row->alliance]);
 
                 return '';
             })
-            ->addColumn('member_limit', function ($row) {
-                return $row->member_limit->limit;
-            })
-            ->filterColumn('ceo', function ($query, $keyword) {
-                return $query->whereHas('ceo', function ($sub_query) use ($keyword) {
-                    return $sub_query->whereRaw('name LIKE ?', ["%$keyword%"]);
-                });
-            })
-            ->filterColumn('alliance', function ($query, $keyword) {
-                return $query->whereHas('alliance', function ($sub_query) use ($keyword) {
-                    return $sub_query->whereRaw('name LIKE ?', ["%$keyword%"]);
-                });
-            })
-            ->rawColumns(['name', 'ceo', 'alliance'])
             ->make(true);
     }
 
@@ -86,6 +72,7 @@ class CorporationDataTable extends DataTable
     {
         return $this->builder()
             ->columns($this->getColumns())
+            ->orderBy(0, 'asc')
             ->postAjax()
             ->parameters([
                 'drawCallback' => 'function() { ids_to_names(); }',
@@ -97,7 +84,8 @@ class CorporationDataTable extends DataTable
      */
     public function query()
     {
-        return CorporationInfo::with('member_limit');
+        return CorporationInfo::with('member_limit', 'ceo', 'alliance')
+            ->select('corporation_infos.*');
     }
 
     /**
@@ -108,8 +96,8 @@ class CorporationDataTable extends DataTable
         return [
             ['data' => 'name', 'title' => trans_choice('web::seat.name', 1)],
             ['data' => 'ticker', 'title' => trans('web::seat.ticker')],
-            ['data' => 'ceo', 'title' => trans('web::seat.ceo'), 'orderable' => false],
-            ['data' => 'alliance', 'title' => trans('web::seat.alliance'), 'orderable' => false],
+            ['data' => 'ceo.name', 'title' => trans('web::seat.ceo')],
+            ['data' => 'alliance.name', 'title' => trans('web::seat.alliance')],
             ['data' => 'tax_rate', 'title' => trans('web::seat.tax_rate')],
             ['data' => 'member_count', 'title' => trans('web::seat.member_count')],
         ];

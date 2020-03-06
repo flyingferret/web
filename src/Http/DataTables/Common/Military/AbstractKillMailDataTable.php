@@ -22,6 +22,7 @@
 
 namespace Seat\Web\Http\DataTables\Common\Military;
 
+use Seat\Eveapi\Models\Killmails\Killmail;
 use Yajra\DataTables\Services\DataTable;
 
 /**
@@ -42,25 +43,23 @@ abstract class AbstractKillMailDataTable extends DataTable
             ->editColumn('action', function ($row) {
                 return view('web::common.killmails.killmailzkb', compact('row'));
             })
-            ->addColumn('date', function ($row) {
+            ->editColumn('detail.killmail_time', function ($row) {
                 return view('web::partials.date', ['datetime' => $row->detail->killmail_time]);
             })
-            ->addColumn('ship', function ($row) {
+            ->editColumn('victim.ship.typeName', function ($row) {
                 return view('web::partials.type', [
                     'type_id' => $row->victim->ship->typeID,
                     'type_name' => $row->victim->ship->typeName,
                 ]);
             })
-            ->addColumn('system', function ($row) {
+            ->editColumn('detail.system.itemName', function ($row) {
                 return view('web::partials.system', [
                     'system' => $row->detail->system->itemName,
                     'security' => $row->detail->system->security,
                 ]);
             })
-            ->addColumn('victim', function ($row) {
-                return view('web::partials.character', ['character' => $row->victim->character->entity_id]) . '<br/>' .
-                    view('web::partials.corporation', ['corporation' => $row->victim->corporation->entity_id]) .
-                    view('web::partials.alliance', ['alliance' => $row->victim->alliance->entity_id]);
+            ->editColumn('victim.character.name', function ($row) {
+                return view('web::common.killmails.entity', ['entity' => $row->victim]);
             })
             ->addColumn('killer', function ($row) {
                 $killer = $row->attackers->where('final_blow', true)->first();
@@ -68,21 +67,9 @@ abstract class AbstractKillMailDataTable extends DataTable
                 if (is_null($killer))
                     return '';
 
-                return view('web::partials.character', ['character' => $killer->character_id]) . '<br/>' .
-                    view('web::partials.corporation', ['corporation' => $killer->corporation_id]) . ' ' .
-                    view('web::partials.alliance', ['alliance' => $killer->alliance_id]);
+                return view('web::common.killmails.entity', ['entity' => $killer]);
             })
-            ->filterColumn('ship', function ($query, $keyword) {
-                return $query->whereHas('victim.ship', function ($sub_query) use ($keyword) {
-                    return $sub_query->whereRaw('typeName LIKE ?', ["%$keyword%"]);
-                });
-            })
-            ->filterColumn('system', function ($query, $keyword) {
-                return $query->whereHas('detail.system', function ($sub_query) use ($keyword) {
-                    return $sub_query->whereRaw('itemName LIKE ?', ["%$keyword%"]);
-                });
-            })
-            ->filterColumn('victim', function ($query, $keyword) {
+            ->filterColumn('victim.character.name', function ($query, $keyword) {
                 $query->whereHas('victim.character', function ($sub_query) use ($keyword) {
                     return $sub_query->whereRaw('name LIKE ?', ["%$keyword%"]);
                 });
@@ -90,6 +77,9 @@ abstract class AbstractKillMailDataTable extends DataTable
                     return $sub_query->whereRaw('name LIKE ?', ["%$keyword%"]);
                 });
                 $query->orWhereHas('victim.alliance', function ($sub_query) use ($keyword) {
+                    return $sub_query->whereRaw('name LIKE ?', ["%$keyword%"]);
+                });
+                $query->orWhereHas('victim.faction', function ($sub_query) use ($keyword) {
                     return $sub_query->whereRaw('name LIKE ?', ["%$keyword%"]);
                 });
             })
@@ -104,9 +94,11 @@ abstract class AbstractKillMailDataTable extends DataTable
                     $sub_query->orWhereHas('alliance', function ($children_query) use ($keyword) {
                         return $children_query->whereRaw('name LIKE ?', ["%$keyword%"]);
                     });
+                    $sub_query->orWhereHas('faction', function ($children_query) use ($keyword) {
+                        return $children_query->whereRaw('name LIKE ?', ["%$keyword%"]);
+                    });
                 });
             })
-            ->rawColumns(['date', 'ship', 'system', 'victim', 'killer', 'action'])
             ->make(true);
     }
 
@@ -119,6 +111,7 @@ abstract class AbstractKillMailDataTable extends DataTable
             ->postAjax()
             ->columns($this->getColumns())
             ->addAction()
+            ->addTableClass('table-striped table-hover')
             ->parameters([
                 'drawCallback' => 'function() { $("[data-toggle=tooltip]").tooltip(); ids_to_names(); }',
             ]);
@@ -127,7 +120,12 @@ abstract class AbstractKillMailDataTable extends DataTable
     /**
      * @return \Illuminate\Database\Eloquent\Builder
      */
-    abstract public function query();
+    public function query()
+    {
+        return Killmail::with('detail', 'detail.system',
+            'victim', 'victim.character', 'victim.corporation', 'victim.alliance', 'victim.faction', 'victim.ship',
+            'attackers', 'attackers.character', 'attackers.corporation', 'attackers.alliance', 'attackers.faction');
+    }
 
     /**
      * @return array
@@ -135,10 +133,10 @@ abstract class AbstractKillMailDataTable extends DataTable
     public function getColumns()
     {
         return [
-            ['data' => 'date', 'title' => trans('web::kills.date'), 'orderable' => false],
-            ['data' => 'ship', 'title' => trans('web::kills.ship'), 'orderable' => false],
-            ['data' => 'system', 'title' => trans('web::kills.solar_system'), 'orderable' => false],
-            ['data' => 'victim', 'title' => trans('web::kills.victim'), 'orderable' => false],
+            ['data' => 'detail.killmail_time', 'title' => trans('web::kills.date')],
+            ['data' => 'victim.ship.typeName', 'title' => trans('web::kills.ship')],
+            ['data' => 'detail.system.itemName', 'title' => trans('web::kills.solar_system')],
+            ['data' => 'victim.character.name', 'title' => trans('web::kills.victim'), 'orderable' => false],
             ['data' => 'killer', 'title' => trans('web::kills.killer'), 'orderable' => false],
         ];
     }

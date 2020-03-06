@@ -43,26 +43,21 @@ class CharacterDataTable extends DataTable
             ->editColumn('name', function ($row) {
                 return view('web::partials.character', ['character' => $row]);
             })
-            ->addColumn('corporation', function ($row) {
-                return view('web::partials.corporation', ['corporation' => $row->corporation->entity_id]);
+            ->editColumn('corporation.name', function ($row) {
+                return view('web::partials.corporation', ['corporation' => $row->affiliation->corporation]);
             })
-            ->addColumn('alliance', function ($row) {
-                if (! is_null($row->alliance_id))
-                    return view('web::partials.alliance', ['alliance' => $row->alliance->entity_id]);
+            ->editColumn('alliance.name', function ($row) {
+                if (! is_null($row->affiliation->alliance_id))
+                    return view('web::partials.alliance', ['alliance' => $row->affiliation->alliance]);
 
                 return '';
             })
-            ->filterColumn('corporation', function ($query, $keyword) {
-                return $query->whereHas('corporation', function ($sub_query) use ($keyword) {
-                    return $sub_query->whereRaw('name LIKE ?', ["%$keyword%"]);
-                });
+            ->editColumn('faction.name', function ($row) {
+                if (! is_null($row->affiliation->faction_id))
+                    return view('web::partials.faction', ['faction' => $row->affiliation->faction]);
+
+                return '';
             })
-            ->filterColumn('alliance', function ($query, $keyword) {
-                return $query->whereHas('alliance', function ($sub_query) use ($keyword) {
-                    return $sub_query->whereRaw('name LIKE ?', ["%$keyword%"]);
-                });
-            })
-            ->rawColumns(['name', 'corporation', 'alliance'])
             ->make(true);
     }
 
@@ -74,6 +69,7 @@ class CharacterDataTable extends DataTable
         return $this->builder()
             ->postAjax()
             ->columns($this->getColumns())
+            ->orderBy(0, 'asc')
             ->parameters([
                 'drawCallback' => 'function() { ids_to_names(); }',
             ]);
@@ -84,7 +80,8 @@ class CharacterDataTable extends DataTable
      */
     public function query()
     {
-        return CharacterInfo::with('corporation', 'alliance');
+        return CharacterInfo::with(['affiliation', 'affiliation.corporation', 'affiliation.alliance', 'affiliation.faction'])
+            ->select('character_infos.*');
     }
 
     /**
@@ -94,8 +91,9 @@ class CharacterDataTable extends DataTable
     {
         return [
             ['data' => 'name', 'title' => trans_choice('web::seat.name', 1)],
-            ['data' => 'corporation', 'title' => trans_choice('web::seat.corporation', 1), 'orderable' => false],
-            ['data' => 'alliance', 'title' => trans('web::seat.alliance'), 'orderable' => false],
+            ['data' => 'affiliation.corporation.name', 'title' => trans_choice('web::seat.corporation', 1)],
+            ['data' => 'affiliation.alliance.name', 'title' => trans('web::seat.alliance')],
+            ['data' => 'affiliation.faction.name', 'title' => trans('web::seat.faction')],
             ['data' => 'security_status', 'title' => trans('web::seat.security_status')],
         ];
     }

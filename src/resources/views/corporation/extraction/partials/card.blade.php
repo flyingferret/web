@@ -1,7 +1,7 @@
 <div class="col-md-4">
-  <div class="info-box @if($extraction->isReady()) bg-green @else bg-blue-gradient @endif">
+  <div class="info-box @if($extraction->isReady()) bg-gradient-success @else bg-gradient-info @endif">
     <span class="info-box-icon">
-      <i class="fa @if($extraction->isReady()) fa-recycle @else fa-diamond @endif"></i>
+      <i class="@if($extraction->isReady()) fas fa-recycle @else far fa-gem @endif"></i>
     </span>
     <div class="info-box-content">
       <span class="info-box-text">
@@ -23,17 +23,19 @@
         <div class="progress-bar" style="width: {{ round(carbon($extraction->extraction_start_time)->diffInSeconds(carbon()) / carbon($extraction->chunk_arrival_time)->diffInSeconds($extraction->extraction_start_time) * 100, 0) }}%"></div>
       </div>
       @endif
-      <span class="progress-description">Chunk age: {{number(carbon($extraction->chunk_arrival_time)->diffInDays($extraction->extraction_start_time), 0)}} days</span>
+      <span class="progress-description">Chunk age: {{number_format(carbon($extraction->chunk_arrival_time)->diffInDays($extraction->extraction_start_time), 0)}} days</span>
     </div>
   </div>
-  <div class="box no-border">
-    <div class="box-body">
+  <div class="card">
+    <div class="card-body">
       @include('web::corporation.extraction.partials.card-body')
     </div>
-    <div class="box-footer">
-      <button type="button" data-toggle="modal" data-target="#moon-modal" class="btn btn-xs btn-link pull-right" aria-label="Settings">
-        <i class="fa fa-cogs"></i> Settings
+    @if(auth()->user()->has('global.moons_reporter_manager', false))
+    <div class="card-footer">
+      <button type="button" data-toggle="modal" data-target="#moon-import" class="btn btn-sm btn-link float-right" aria-label="Settings">
+        <i class="fas fa-cogs"></i> Settings
       </button>
     </div>
+    @endif
   </div>
 </div>

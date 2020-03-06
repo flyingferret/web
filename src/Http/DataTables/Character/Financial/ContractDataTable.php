@@ -37,7 +37,7 @@ class ContractDataTable extends AbstractContractDataTable
      */
     public function query()
     {
-        return CharacterContract::orderByDesc('contract_id');
+        return CharacterContract::with('detail', 'detail.issuer', 'detail.assignee', 'detail.acceptor');
     }
 
     /**
@@ -47,7 +47,7 @@ class ContractDataTable extends AbstractContractDataTable
     {
         return parent::html()
             ->ajax([
-                'data' => 'function(d) { d.characters = $("#dt-character-selector").val(); }',
+                'data' => 'function(d) { d.characters = $("#dt-character-selector").val(); d.filters = {}; $("[data-filter-field].dt-filters.active").each(function (i, e) { var a = $(e); var field = a.data("filter-field"); var value = a.data("filter-value"); if (! d.filters[field]) { d.filters[field] = []; } d.filters[field].push(value); }); }',
             ]);
     }
 }
